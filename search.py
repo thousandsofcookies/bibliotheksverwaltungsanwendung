@@ -6,7 +6,7 @@ import database as db
 
 # Funktion für die allgemeine Suche nach Büchern
 def search_books(search_var, tree):
-    conn = sqlite3.connect('library.db')
+    conn = sqlite3.connect('library.db')  # Stellt eine Verbindung zur SQLite-Datenbank her
     cursor = conn.cursor()
 
     # Suchbegriff für allgemeine Suche
@@ -22,18 +22,18 @@ def search_books(search_var, tree):
     for row in result:
         tree.insert("", "end", values=row)
 
-    conn.close()
+    conn.close()  # Schließt die Datenbankverbindung
 
 # Funktion für die spezifische Suche nach einem Buch anhand seiner ID
 def search_book_by_id(book_id):
-    conn = sqlite3.connect('library.db')
+    conn = sqlite3.connect('library.db')  # Stellt eine Verbindung zur SQLite-Datenbank her
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM books WHERE id=?", (book_id,))
     result = cursor.fetchall()
 
-    conn.close()
-    return result
+    conn.close()  # Schließt die Datenbankverbindung
+    return result  # Gibt das Ergebnis der Suche zurück
 
 # Funktion zum Erstellen des Such-Tabs
 def create_search_tab(parent):
@@ -60,13 +60,15 @@ def create_search_tab(parent):
     edit_icon = tk.PhotoImage(file="edit.png")  # Verwenden Sie das entsprechende Symbolbild
     delete_icon = tk.PhotoImage(file="delete.png")  # Verwenden Sie das entsprechende Symbolbild
 
+    # Bearbeiten-Button, standardmäßig deaktiviert
     edit_button = tk.Button(search_frame, text=" Bearbeiten", image=edit_icon, compound="left", state=tk.DISABLED, command=lambda: open_edit_modal(tree))
     edit_button.grid(row=0, column=3, padx=5)
 
+    # Löschen-Button, standardmäßig deaktiviert
     delete_button = tk.Button(search_frame, text=" Löschen", image=delete_icon, compound="left", state=tk.DISABLED, command=lambda: confirm_delete(tree))
     delete_button.grid(row=0, column=4, padx=5)
 
-    # Treeview Widget für tabellarische Ansicht
+    # Treeview Widget für tabellarische Ansicht der Bücher
     columns = ("ID", "Titel", "Autor", "Erscheinungsjahr", "Genre", "Status")
     tree = ttk.Treeview(search_tab, columns=columns, show='headings')
     tree.heading("ID", text="ID")
@@ -100,22 +102,22 @@ def create_search_tab(parent):
 
 # Funktion zur Aktivierung der Buttons, wenn eine Zeile ausgewählt wird
 def on_tree_select(event, edit_button, delete_button):
-    selected_item = event.widget.selection()
+    selected_item = event.widget.selection()  # Überprüfen, ob eine Zeile ausgewählt wurde
     if selected_item:
-        edit_button.config(state=tk.NORMAL)
-        delete_button.config(state=tk.NORMAL)
+        edit_button.config(state=tk.NORMAL)  # Aktiviert den Bearbeiten-Button
+        delete_button.config(state=tk.NORMAL)  # Aktiviert den Löschen-Button
     else:
-        edit_button.config(state=tk.DISABLED)
-        delete_button.config(state=tk.DISABLED)
+        edit_button.config(state=tk.DISABLED)  # Deaktiviert den Bearbeiten-Button
+        delete_button.config(state=tk.DISABLED)  # Deaktiviert den Löschen-Button
 
 # Funktion zum Öffnen des Bearbeitungsfensters
 def open_edit_modal(tree):
-    selected_item = tree.selection()
+    selected_item = tree.selection()  # Überprüfen, ob eine Zeile ausgewählt wurde
     if not selected_item:
-        messagebox.showerror("Fehler", "Kein Buch ausgewählt.")
+        messagebox.showerror("Fehler", "Kein Buch ausgewählt.")  # Zeigt eine Fehlermeldung an, wenn keine Auswahl getroffen wurde
         return
 
-    book_id = tree.item(selected_item, "values")[0]
+    book_id = tree.item(selected_item, "values")[0]  # Ruft die ID des ausgewählten Buches ab
     print(f"DEBUG: Ausgewählte Buch-ID: {book_id}")  # Debugging-Ausgabe
 
     # Verwenden der spezifischen Suchfunktion nach ID
@@ -123,16 +125,17 @@ def open_edit_modal(tree):
     print(f"DEBUG: Gefundenes Buch: {book}")  # Debugging-Ausgabe
 
     if not book or len(book) == 0:
-        messagebox.showerror("Fehler", f"Das ausgewählte Buch mit der ID {book_id} existiert nicht mehr.")
+        messagebox.showerror("Fehler", f"Das ausgewählte Buch mit der ID {book_id} existiert nicht mehr.")  # Fehlermeldung, wenn das Buch nicht existiert
         return
 
     book = book[0]  # Nur das erste Ergebnis verwenden
 
+    # Erstellen eines neuen Fensters zum Bearbeiten des Buches
     edit_window = tk.Toplevel()
     edit_window.title("Buch bearbeiten")
     edit_window.geometry("400x300")
 
-    vars = {}
+    vars = {}  # Dictionary zum Speichern der Formularvariablen
 
     labels = ["Titel", "Autor", "Erscheinungsjahr", "Genre", "Status"]
     for i, label in enumerate(labels):
@@ -150,14 +153,14 @@ def open_edit_modal(tree):
             var = tk.StringVar(value=book[i + 1])
             tk.Entry(edit_window, textvariable=var).grid(row=i, column=1, padx=5, pady=5)
 
-        vars[label] = var
+        vars[label] = var  # Speichert die Variable im Dictionary
 
     tk.Button(edit_window, text="Speichern", command=lambda: save_edit(book_id, vars, edit_window)).grid(row=5, column=0, columnspan=2, pady=10)
     tk.Button(edit_window, text="Abbrechen", command=edit_window.destroy).grid(row=6, column=0, columnspan=2)
 
 # Funktion zum Speichern der bearbeiteten Daten
 def save_edit(book_id, vars, window):
-    conn = sqlite3.connect('library.db')
+    conn = sqlite3.connect('library.db')  # Stellt eine Verbindung zur SQLite-Datenbank her
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -165,31 +168,35 @@ def save_edit(book_id, vars, window):
         SET title=?, author=?, year=?, genre=?, status=?
         WHERE id=?
     """, (vars["Titel"].get(), vars["Autor"].get(), vars["Erscheinungsjahr"].get(),
-          vars["Genre"].get(), vars["Status"].get(), book_id))
+          vars["Genre"].get(), vars["Status"].get(), book_id))  # Führt das SQL-UPDATE-Statement aus, um die Buchdaten zu aktualisieren
 
-    conn.commit()
-    conn.close()
+    conn.commit()  # Speichert die Änderungen in der Datenbank
+    conn.close()  # Schließt die Datenbankverbindung
 
-    messagebox.showinfo("Erfolg", "Buch erfolgreich bearbeitet.")
-    window.destroy()
+    messagebox.showinfo("Erfolg", "Buch erfolgreich bearbeitet.")  # Zeigt eine Erfolgsmeldung an
+    window.destroy()  # Schließt das Bearbeitungsfenster
+
+    # Optional: Aktualisieren der Treeview nach der Bearbeitung
+    # Sie können die Treeview aktualisieren, um die Änderungen anzuzeigen, beispielsweise durch Aufruf von search_books().
 
 # Funktion zur Bestätigung des Löschvorgangs
 def confirm_delete(tree):
-    selected_item = tree.selection()
+    selected_item = tree.selection()  # Überprüft, ob eine Zeile in der Treeview ausgewählt wurde
     if not selected_item:
-        messagebox.showerror("Fehler", "Kein Buch ausgewählt.")
+        messagebox.showerror("Fehler", "Kein Buch ausgewählt.")  # Zeigt eine Fehlermeldung an, wenn keine Zeile ausgewählt wurde
         return
 
-    book_id = tree.item(selected_item, "values")[0]
+    book_id = tree.item(selected_item, "values")[0]  # Ruft die ID des ausgewählten Buches ab
 
+    # Zeigt eine Bestätigungsdialogbox an, um den Benutzer zu fragen, ob er das Buch wirklich löschen möchte
     response = messagebox.askyesno("Buch löschen", "Sind Sie sicher, dass Sie dieses Buch löschen möchten?")
-    if response:
-        conn = sqlite3.connect('library.db')
+    if response:  # Wenn der Benutzer 'Ja' auswählt, wird das Buch gelöscht
+        conn = sqlite3.connect('library.db')  # Stellt eine Verbindung zur SQLite-Datenbank her
         cursor = conn.cursor()
 
-        cursor.execute("DELETE FROM books WHERE id=?", (book_id,))
-        conn.commit()
-        conn.close()
+        cursor.execute("DELETE FROM books WHERE id=?", (book_id,))  # Führt das SQL-DELETE-Statement aus, um das Buch zu löschen
+        conn.commit()  # Speichert die Änderungen in der Datenbank
+        conn.close()  # Schließt die Datenbankverbindung
 
-        tree.delete(selected_item)  # Zeile aus der Tabelle entfernen
-        messagebox.showinfo("Erfolg", "Buch erfolgreich gelöscht.")
+        tree.delete(selected_item)  # Entfernt die ausgewählte Zeile aus der Treeview
+        messagebox.showinfo("Erfolg", "Buch erfolgreich gelöscht.")  # Zeigt eine Bestätigungsmeldung an
